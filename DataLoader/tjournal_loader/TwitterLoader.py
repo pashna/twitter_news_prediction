@@ -1,7 +1,5 @@
-# -*- coding: utf-8 -*-
-__author__ = 'popka'
 import twitter
-from datetime import datetime
+from datetime import datetime, timedelta
 from dateutil import tz
 import time
 
@@ -25,7 +23,7 @@ class TwitterLoader:
         self._MOSCOW_TIME_ZONE = tz.gettz('Europe/Moscow')
         self._RATE_LIMIT = "[{u'message': u'Rate limit exceeded', u'code': 88}]"
 
-        self._news_uri = "https://tjournal.ru/p/{}"
+        self._news_uri = "https://tjournal.ru/p/"
 
 
 
@@ -107,6 +105,7 @@ class TwitterLoader:
                     }
 
             tweet_list.append(tw_dict)
+            print tw_dict
 
         return tweet_list
 
@@ -117,9 +116,9 @@ class TwitterLoader:
         :param days: int, количество дней
         :return: возвращает дату через days-дней после date
         """
-        date = datetime.strptime(date, '%Y-%m-%d %H:%M:%S')
-        date += datetime.timedelta(days=days)
-        return str(date)
+        date = datetime.strptime(date, '%Y-%m-%d %H:%M')
+        date += timedelta(days=days)
+        return str(date).split(' ')[0]
 
 
     def load_tweets_by_term(self, news_list, days_after_news=2):
@@ -130,10 +129,11 @@ class TwitterLoader:
         """
         result_list = []
         for news in news_list:
+            tweets = []
             try:
-                uri = self._news_uri.format(news.id)
-                self._get_next_date(news.date, days_after_news)
-                tweets = self.loadTweetWithLink(news)
+                uri = self._news_uri + news["id"]
+                until_date = self._get_next_date(news["date"], days_after_news)
+                tweets = self.loadTweetWithLink(uri, until_date)
             except twitter.error.TwitterError as ex:
                 print str(ex)
                 if str(ex) == self._RATE_LIMIT:
@@ -143,6 +143,8 @@ class TwitterLoader:
                     tweets = self.loadTweetWithLink(news)
 
             result_list.append(tweets)
+            
+        return result_list
 
 
 
